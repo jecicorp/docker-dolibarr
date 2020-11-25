@@ -1,0 +1,70 @@
+---
+version: '3.6'
+
+services:
+  dolibarr:
+    build: images/12.0/php7.2-fpm-alpine-amd64
+    restart: always
+    networks:
+      - backend
+    depends_on:
+      - mariadb
+    expose:
+      - 9000
+    volumes:
+      - dolibarr_html:/var/www/html
+      - dolibarr_documents:/var/www/documents
+      - dolibarr_scripts:/var/www/scripts
+    environment:
+      - DOLI_DB_TYPE=mysqli
+      - DOLI_DB_HOST=mariadb
+      - DOLI_DB_PORT=3306
+      - DOLI_DB_NAME=${DOLIBARR_DB_NAME}
+      - DOLI_DB_USER=${DOLIBARR_DB_USER}
+      - DOLI_DB_PASSWORD=${DOLIBARR_DB_PASSWORD}
+      - DOLI_AUTO_CONFIGURE=1
+      - DOLI_URL_ROOT=${URL_ROOT}
+      - DOLI_PROD=1
+
+  mariadb:
+    image: mariadb:10.5
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    networks:
+      - backend
+    expose:
+      - 3306
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_DATABASE=${DOLIBARR_DB_NAME}
+      - MYSQL_USER=${DOLIBARR_DB_USER}
+      - MYSQL_PASSWORD=${DOLIBARR_DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+
+  proxy:
+    build: images/proxy
+    restart: always
+    networks:
+      - backend
+      - ingress
+    labels:
+      fr.jeci.ingress: "dolibarr"
+    expose:
+      - 80
+    depends_on:
+      - dolibarr
+    volumes:
+      - dolibarr_html:/var/www/html
+
+networks:
+  backend:
+  ingress:
+    external: true
+
+volumes:
+  mariadb_data:
+  dolibarr_html:
+  dolibarr_documents:
+  dolibarr_scripts:
