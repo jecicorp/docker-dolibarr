@@ -3,7 +3,7 @@ version: '3.6'
 
 services:
   dolibarr:
-    build: images/12.0/php7.2-fpm-alpine-amd64
+    build: images/13.0/php7.3-fpm-alpine-amd64
     restart: always
     networks:
       - backend
